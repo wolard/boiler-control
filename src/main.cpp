@@ -1,17 +1,74 @@
 #include <Arduino.h>
 #include <Adafruit_ADS1X15.h>
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+#include <ESP8266Ping.h>
 #define PERIOD 10000 
 #define motor1 D1
 #define motor2 D2 
+# define SSID "koti"
+# define SSPW "kopo2008"
+# define MQTT "192.168.1.201"
 unsigned long lastTime = 0;
 float volts0, volts1, volts2, volts3;
  int16_t adc0, adc1, adc2, adc3;
 int motorval1=252;
 int motorval2=252;
-
+long lastReconnectAttempt = 0;
+WiFiClient espClient;
+PubSubClient client(espClient);
+unsigned long lastMsg = 0;
+unsigned long lastPingMsg = 0;
 //Adafruit_ADS1115 ads;  /* Use this for the 16-bit version */
 Adafruit_ADS1015 ads;     /* Use this for the 12-bit version */
+void setup_wifi()
+{
 
+  delay(10);
+  // We start by connecting to a WiFi network
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(SSID);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(SSID, SSPW);
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
+
+  randomSeed(micros());
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+}
+
+void callback(char *topic, byte *payload, unsigned int length)
+{
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i = 0; i < length; i++)
+  {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+
+  // Switch on the LED if an 1 was received as first character
+ 
+}
+boolean reconnectfunc()
+{
+  if (client.connect("boilerClient"))
+  {
+  client.subscribe("talo/intemp");
+  }
+  return client.connected();
+}
 void setup(void)
 {
   pinMode(motor1,OUTPUT);
@@ -39,10 +96,33 @@ Wire.begin(D6, D5);
     Serial.println("Failed to initialize ADS.");
     while (1);
   }
+    setup_wifi();
+  client.setServer(MQTT, 1883);
+  client.setCallback(callback);
+  lastReconnectAttempt = 0;
 }
 
 void loop(void)
 {
+    if (!client.connected())
+  {
+    long now = millis();
+    if (now - lastReconnectAttempt > 5000)
+    {
+      lastReconnectAttempt = now;
+      // Attempt to reconnect
+      if (reconnectfunc())
+      {
+        lastReconnectAttempt = 0;
+      }
+    }
+  }
+  else
+  {
+    // Client connected
+
+    client.loop();
+  }
     unsigned long now = millis();
   if (now - lastTime >= PERIOD) // this will be true every PERIOD milliseconds
   {
@@ -104,7 +184,17 @@ void loop(void)
     }
     }
   }
+    if (millis() - lastPingMsg > 5000)
+  {
+    lastPingMsg = millis();
+      if(Ping.ping(MQTT,1)) {
+    Serial.println("Success!!");
+  } else {
+    Serial.println("Error :(");
+     ESP.restart();
+  }
 
+  }
   }
  
 

@@ -57,7 +57,7 @@ void loop(void)
      Serial.print("AIN0: "); Serial.print(adc0); Serial.print("  "); Serial.print(volts0); Serial.println("V");
  Serial.print("AIN1: "); Serial.print(adc1); Serial.print("  "); Serial.print(volts1); Serial.println("V");
   
-    if (volts0<2.05)
+    if (volts0<2.15)
     {
      if(motorval1<255)
     {
@@ -70,7 +70,7 @@ void loop(void)
 
 
   
-    if (volts0>2.10)
+    if (volts0>2.20)
     {
       Serial.println("decreasing motor1");
     Serial.println(motorval1);

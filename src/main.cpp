@@ -106,7 +106,25 @@ void loop(void)
   }
 
   }
- 
+ float calctemp()
+{
+    int16_t adc = ads.readADC_SingleEnded(0);
+    float voltage=ads.computeVolts(adc);
+    float res=10000*(3.3/voltage-1);
+  //  Serial.print("Thermistor resistance ");
+ // Serial.println(res);
+  float temp = res / 10000;     // (R/Ro)
+  temp = log(temp);                  // ln(R/Ro)
+  temp /= 3977;                   // 1/B * ln(R/Ro)
+  temp += 1.0 / (25 + 273.15); // + (1/To)
+  temp = 1.0 / temp;                 // Invert
+  temp -= 273.15;                         // convert absolute temp to C
+
+ // Serial.print("Temperature ");
+ // Serial.print(temp);
+ // Serial.println(" *C"); 
+return temp;
+} 
 
 
  

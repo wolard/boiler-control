@@ -3,6 +3,7 @@
 #define PERIOD 10000 
 #define motor1 D1
 #define motor2 D2 
+float calctemp(int sensor);
 unsigned long lastTime = 0;
 float volts0, volts1, volts2, volts3;
  int16_t adc0, adc1, adc2, adc3;
@@ -29,7 +30,7 @@ void setup(void)
   //                                                                ADS1015  ADS1115
   //                                                                -------  -------
   // ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 3mV      0.1875mV (default)
-  // ads.setGain(GAIN_ONE);        // 1x gain   +/- 4.096V  1 bit = 2mV      0.125mV
+   ads.setGain(GAIN_ONE);        // 1x gain   +/- 4.096V  1 bit = 2mV      0.125mV
   // ads.setGain(GAIN_TWO);        // 2x gain   +/- 2.048V  1 bit = 1mV      0.0625mV
   // ads.setGain(GAIN_FOUR);       // 4x gain   +/- 1.024V  1 bit = 0.5mV    0.03125mV
   // ads.setGain(GAIN_EIGHT);      // 8x gain   +/- 0.512V  1 bit = 0.25mV   0.015625mV
@@ -47,7 +48,10 @@ void loop(void)
   if (now - lastTime >= PERIOD) // this will be true every PERIOD milliseconds
   {
    
- 
+ float HouseTemp=calctemp(0);
+ Serial.println(HouseTemp);
+  
+ calctemp(1);
   lastTime = now;
     adc0 = ads.readADC_SingleEnded(0);
     adc1 = ads.readADC_SingleEnded(1);
@@ -57,7 +61,7 @@ void loop(void)
      Serial.print("AIN0: "); Serial.print(adc0); Serial.print("  "); Serial.print(volts0); Serial.println("V");
  Serial.print("AIN1: "); Serial.print(adc1); Serial.print("  "); Serial.print(volts1); Serial.println("V");
   
-    if (volts0<2.15)
+    if (HouseTemp<45)
     {
      if(motorval1<255)
     {
@@ -70,7 +74,7 @@ void loop(void)
 
 
   
-    if (volts0>2.20)
+    if (HouseTemp>46)
     {
       Serial.println("decreasing motor1");
     Serial.println(motorval1);
@@ -106,9 +110,9 @@ void loop(void)
   }
 
   }
- float calctemp()
+ float calctemp(int sensor)
 {
-    int16_t adc = ads.readADC_SingleEnded(0);
+    int16_t adc = ads.readADC_SingleEnded(sensor);
     float voltage=ads.computeVolts(adc);
     float res=10000*(3.3/voltage-1);
   //  Serial.print("Thermistor resistance ");
@@ -118,11 +122,12 @@ void loop(void)
   temp /= 3977;                   // 1/B * ln(R/Ro)
   temp += 1.0 / (25 + 273.15); // + (1/To)
   temp = 1.0 / temp;                 // Invert
-  temp -= 273.15;                         // convert absolute temp to C
-
- // Serial.print("Temperature ");
- // Serial.print(temp);
- // Serial.println(" *C"); 
+  temp -= 273.15;    
+/*    Serial.print("sensor");                     // convert absolute temp to C
+    Serial.print(sensor);
+  Serial.print(" Temperature ");
+  Serial.print(temp);
+  Serial.println(" *C"); */ 
 return temp;
 } 
 
